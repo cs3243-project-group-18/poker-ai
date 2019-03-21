@@ -1,3 +1,8 @@
 language: python
 python:
   - "2.7"
+install:
+  - pip install PyPokerEngine
+script:
+  - conda create -n cs3243_group_18_poker_ai python=2.7
+  - source activate cs3243_group_18_poker_ai
