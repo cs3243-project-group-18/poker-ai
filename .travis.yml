@@ -1,8 +1,25 @@
 language: python
-python:
-  - "2.7"
+
+matrix:
+  # Use python version 2.7
+  include:
+    - python: 2.7
+
+before_install:
+  #Install Miniconda
+  - wget https://repo.continuum.io/miniconda/Miniconda3-3.7.0-Linux-x86_64.sh -O ~/miniconda.sh
+  - chmod +x ~/miniconda.sh
+  - bash ~/miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda update --yes conda
+  
 install:
-  - pip install PyPokerEngine
-script:
-  - conda create -n cs3243_group_18_poker_ai python=2.7
+  #Setup project environment using conda
+  - conda create --yes -n cs3243_group_18_poker_ai python=2.7
   - source activate cs3243_group_18_poker_ai
+  #Install PyPokerEngine via pip
+  - pip install PyPokerEngine
+  
+script:
+  - python example.py #Run the poker rounds
+ 
