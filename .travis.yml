@@ -15,10 +15,12 @@ before_install:
   
 install:
   #Setup project environment using conda
-  - conda create --yes -n cs3243_group_18_poker_ai python=2.7
-  - source activate cs3243_group_18_poker_ai
+  - conda create --yes -n poker-ai python=2.7
+  - source activate poker-ai  
   #Install PyPokerEngine via pip
   - pip install PyPokerEngine
+  - pip install Keras
+  - pip install tensorflow
   
 script:
   - python example.py > /dev/null 2>&1 #Run the poker rounds
