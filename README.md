@@ -9,7 +9,7 @@
 
 ```
 
-class RaisedPlayer(BasePokerPlayer):
+class Group18Player(BasePokerPlayer):
 
   def declare_action(self, valid_actions, hole_card, round_state):
     #Implement your code
