@@ -1,3 +1,4 @@
+import numpy as np
 from pypokerengine.players import BasePokerPlayer
 from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
 
@@ -13,11 +14,18 @@ class HonestPlayer(BasePokerPlayer):
             hole_card=gen_cards(hole_card),
             community_card=gen_cards(community_card)
         )
-        if win_rate >= 1.0 / self.nb_player:
-            action = valid_actions[1]  # fetch CALL action info
+
+        if win_rate >= 1.6 / self.nb_player and len(valid_actions) == 3:
+            roll = np.random.randint(2)
+            if roll == 1:
+                action = valid_actions[2]  # fetch RAISE action info
+            else:
+                action = valid_actions[1]   # fetch CALL action info
+        elif win_rate >= 1.0 / self.nb_player:
+            action = valid_actions[1]   # fetch CALL action info
         else:
             action = valid_actions[0]  # fetch FOLD action info
-        return action['action'], action['amount']
+        return action['action']
 
     def receive_game_start_message(self, game_info):
         self.nb_player = game_info['player_num']
