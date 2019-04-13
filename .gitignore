@@ -1,4 +1,4 @@
 *.pyc
-.idea/
-.idea/misc.xml
-.idea/workspace.xml
+.idea/*
+poker-ai/players/reinforced_player.py
+poker-ai/players/self_player.py
