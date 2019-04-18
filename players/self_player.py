@@ -9,13 +9,13 @@ from pypokerengine.api.emulator import Emulator
 from pypokerengine.utils.game_state_utils import restore_game_state
 
 
-class Group18Player(BasePokerPlayer):
+class SelfPlayer(BasePokerPlayer):
     my_uuid = ""
     suits = {'S': 0, 'H': 1, 'D': 2, 'C': 3}
     ranks = {'A': 12, 'K': 11, 'Q': 10, 'J': 9, 'T': 8, '9': 7, '8': 6, '7': 5, '6': 4, '5': 3, '4': 2, '3': 1, '2': 0}
     y = 0.9
     e = 1 - y
-    max_replay_size = 15
+    max_replay_size = 30
     my_starting_stack = 10000
     opp_starting_stack = 10000
     starting_stack = 10000
@@ -47,7 +47,7 @@ class Group18Player(BasePokerPlayer):
 
             model = Model(inputs=[input_cards, input_actions,input_position], outputs=out)
             if self.vvh == 0:
-                model.load_weights('Group18.h5', by_name=True)
+                model.load_weights('setup/training_weights.h5', by_name=True)
 
             model.compile(optimizer='rmsprop', loss='mse')
 
@@ -88,7 +88,7 @@ class Group18Player(BasePokerPlayer):
         self.prev_round_features = []
         self.prev_reward_state = []
         self.has_played = False
-        self.model = keras_model()
+        self.model = keras_model_random_initialise()
         self.target_Q = [[0, 0, 0]]
 
     def declare_action(self, valid_actions, hole_card, round_state):
@@ -98,8 +98,8 @@ class Group18Player(BasePokerPlayer):
             return Group18Player.suits[suit]
 
         def get_card_y(card):
-            rank = card[1]
-            return Group18Player.ranks[rank]
+            small_or_big_blind_turn = card[1]
+            return Group18Player.ranks[small_or_big_blind_turn]
 
         def get_street_grid(cards):
             grid = np.zeros((4,13))
@@ -142,7 +142,7 @@ class Group18Player(BasePokerPlayer):
                     del self.prev_reward_state[0]
 
             # if self.vvh > 2000:
-            # save_weights()
+            save_weights()
 
         # Maybe don't modularise this, the program takes up more ram when this is modularised
         def pick_action():

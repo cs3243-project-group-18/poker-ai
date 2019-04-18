@@ -1,4 +1,2 @@
 *.pyc
 .idea/*
-poker-ai/players/reinforced_player.py
-poker-ai/players/self_player.py

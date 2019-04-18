@@ -1,6 +1,7 @@
 from pypokerengine.api.game import setup_config, start_poker
 from raise_player import Group18Player
-# from honest_player import HonestPlayer
+# from honest_player import DumbHonestPlayer
+# from honest_player import SmartHonestPlayer
 # from reinforced_player import RLPlayer
 # from self_player import SelfPlayer
 
