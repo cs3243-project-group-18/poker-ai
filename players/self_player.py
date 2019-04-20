@@ -15,7 +15,7 @@ class SelfPlayer(BasePokerPlayer):
     ranks = {'A': 12, 'K': 11, 'Q': 10, 'J': 9, 'T': 8, '9': 7, '8': 6, '7': 5, '6': 4, '5': 3, '4': 2, '3': 1, '2': 0}
     y = 0.9
     e = 1 - y
-    max_replay_size = 30
+    max_replay_size = 15
     my_starting_stack = 10000
     opp_starting_stack = 10000
     starting_stack = 10000
@@ -29,8 +29,7 @@ class SelfPlayer(BasePokerPlayer):
             input_position = Input(shape=(1,),name="position_input")
 
             x1 = Conv2D(32,(2,2),activation='relu')(input_cards)
-            x2 = Conv2D(32,(1,1),activation='relu')(input_actions)
-            x2 = Conv2D(32,(2,2),activation='relu')(x2)
+            x2 = Conv2D(32,(2,2),activation='relu')(input_actions)
             x3 = Dense(1,activation='relu')(input_position)
 
             d1 = Dense(128,activation='relu')(x1)
@@ -47,7 +46,7 @@ class SelfPlayer(BasePokerPlayer):
 
             model = Model(inputs=[input_cards, input_actions,input_position], outputs=out)
             if self.vvh == 0:
-                model.load_weights('setup/training_weights.h5', by_name=True)
+                model.load_weights('setup/add3_2000_smarthonest.h5', by_name=True)
 
             model.compile(optimizer='rmsprop', loss='mse')
 
@@ -59,8 +58,7 @@ class SelfPlayer(BasePokerPlayer):
             input_position = Input(shape=(1,),name="position_input")
 
             x1 = Conv2D(32,(2,2),activation='relu', kernel_initializer="random_uniform")(input_cards)
-            x2 = Conv2D(32,(1,1),activation='relu', kernel_initializer="random_uniform")(input_actions)
-            x2 = Conv2D(32,(2,2),activation='relu', kernel_initializer="random_uniform")(x2)
+            x2 = Conv2D(32,(2,2),activation='relu', kernel_initializer="random_uniform")(input_actions)
             x3 = Dense(1,activation='relu', kernel_initializer="random_uniform")(input_position)
 
             d1 = Dense(128,activation='relu', kernel_initializer="random_uniform")(x1)
@@ -95,11 +93,11 @@ class SelfPlayer(BasePokerPlayer):
 
         def get_card_x(card):
             suit = card[0]
-            return Group18Player.suits[suit]
+            return SelfPlayer.suits[suit]
 
         def get_card_y(card):
             small_or_big_blind_turn = card[1]
-            return Group18Player.ranks[small_or_big_blind_turn]
+            return SelfPlayer.ranks[small_or_big_blind_turn]
 
         def get_street_grid(cards):
             grid = np.zeros((4,13))
@@ -130,23 +128,23 @@ class SelfPlayer(BasePokerPlayer):
             self.action_sb = np.argmax(self.cur_Q_values)
 
             if self.has_played:
-                reward_sb = Group18Player.y * np.max(self.cur_Q_values)
+                reward_sb = SelfPlayer.y * np.max(self.cur_Q_values)
                 self.target_Q[0, self.action_sb] = reward_sb
                 self.vvh = self.vvh + 1
                 # new_name = 'my_model_weights'
                 # model.fit(self.old_state,self.target_Q,verbose=0)
                 self.prev_round_features.append(self.old_state)
                 self.prev_reward_state.append(self.target_Q)
-                if len(self.prev_round_features) > Group18Player.max_replay_size:
+                if len(self.prev_round_features) > SelfPlayer.max_replay_size:
                     del self.prev_round_features[0]
                     del self.prev_reward_state[0]
 
             # if self.vvh > 2000:
-            save_weights()
+            # save_weights()
 
         # Maybe don't modularise this, the program takes up more ram when this is modularised
         def pick_action():
-            if np.random.rand(1) < Group18Player.e:
+            if np.random.rand(1) < SelfPlayer.e:
                 self.action_sb = np.random.randint(0,4)
 
             if self.action_sb == 3 or len(valid_actions) == 2:
@@ -190,22 +188,22 @@ class SelfPlayer(BasePokerPlayer):
             self.target_Q = self.cur_Q_values
             #self.old_action = self.action_sb
 
-        preflop_actions = convert_to_image_grid(Group18Player.starting_stack, round_state, 'preflop')
+        preflop_actions = convert_to_image_grid(SelfPlayer.starting_stack, round_state, 'preflop')
 
         if round_state['street'] == 'flop':
             flop = round_state['community_card']
             flop_cards_img = get_street_grid(flop)
-            flop_actions = convert_to_image_grid(Group18Player.starting_stack, round_state, 'flop')
+            flop_actions = convert_to_image_grid(SelfPlayer.starting_stack, round_state, 'flop')
 
         if round_state['street'] == 'turn':
             turn = round_state['community_card'][3]
             turn_cards_img = get_street_grid([turn])
-            turn_actions = convert_to_image_grid(Group18Player.starting_stack, round_state, 'turn')
+            turn_actions = convert_to_image_grid(SelfPlayer.starting_stack, round_state, 'turn')
 
         if round_state['street'] == 'river':
             river = round_state['community_card'][4]
             river_cards_img = get_street_grid([river])
-            river_actions = convert_to_image_grid(Group18Player.starting_stack, round_state, 'river')
+            river_actions = convert_to_image_grid(SelfPlayer.starting_stack, round_state, 'river')
 
         # Form action features
         actions_feature = np.stack([preflop_actions,flop_actions,turn_actions,river_actions],axis=2).reshape((1,2,6,4))
@@ -233,14 +231,14 @@ class SelfPlayer(BasePokerPlayer):
         return pick_action()
 
     def receive_game_start_message(self, game_info):
-        Group18Player.my_uuid = self.uuid
+        SelfPlayer.my_uuid = self.uuid
 
     def receive_round_start_message(self, round_count, hole_card, seats):
         for seat in seats:
-            if Group18Player.my_uuid == seat["uuid"]:
-                Group18Player.my_starting_stack = seat["stack"]
+            if SelfPlayer.my_uuid == seat["uuid"]:
+                SelfPlayer.my_starting_stack = seat["stack"]
             else:
-                Group18Player.opp_starting_stack = seat["stack"]
+                SelfPlayer.opp_starting_stack = seat["stack"]
 
     def receive_street_start_message(self, street, round_state):
         pass
@@ -250,17 +248,17 @@ class SelfPlayer(BasePokerPlayer):
 
     def receive_round_result_message(self, winners, hand_info, round_state):
         def get_real_reward():
-            if winners[0]['uuid'] == Group18Player.my_uuid:
-                return winners[0]['stack'] - Group18Player.my_starting_stack
+            if winners[0]['uuid'] == SelfPlayer.my_uuid:
+                return winners[0]['stack'] - SelfPlayer.my_starting_stack
             else:
-                return -(winners[0]['stack'] - Group18Player.opp_starting_stack)
+                return -(winners[0]['stack'] - SelfPlayer.opp_starting_stack)
 
         reward = int(get_real_reward())
         self.target_Q = self.model.predict(self.sb_features)
         if self.action_sb == 0:
             # If the best move is not FOLD, we punish AI severely
             if np.argmax(self.target_Q) != 0:
-                self.target_Q[0, self.action_sb] = reward * Group18Player.y
+                self.target_Q[0, self.action_sb] = reward * SelfPlayer.y
             # Else we reward it slightly
             else:
                 self.target_Q[0, self.action_sb] = 0
@@ -270,7 +268,7 @@ class SelfPlayer(BasePokerPlayer):
         self.prev_round_features.append(self.sb_features)
         self.prev_reward_state.append(self.target_Q)
 
-        if len(self.prev_round_features) > Group18Player.max_replay_size:
+        if len(self.prev_round_features) > SelfPlayer.max_replay_size:
             del self.prev_round_features[0]
             del self.prev_reward_state[0]
 
@@ -280,4 +278,4 @@ class SelfPlayer(BasePokerPlayer):
 
 
 def setup_ai():
-    return Group18Player()
+    return SelfPlayer()

@@ -1,7 +1,7 @@
 import datetime
 import numpy as np
 from keras import initializers
-from keras.layers import Input, Dense, Conv2D,concatenate,Flatten
+from keras.layers import Input, Dense, Conv2D,concatenate,Flatten,MaxPooling2D, Concatenate
 from keras.models import Model
 
 from pypokerengine.players import BasePokerPlayer
@@ -13,7 +13,7 @@ class Group18Player(BasePokerPlayer):
     my_uuid = ""
     suits = {'S': 0, 'H': 1, 'D': 2, 'C': 3}
     ranks = {'A': 12, 'K': 11, 'Q': 10, 'J': 9, 'T': 8, '9': 7, '8': 6, '7': 5, '6': 4, '5': 3, '4': 2, '3': 1, '2': 0}
-    y = 0.9
+    y = 0.95
     e = 1 - y
     max_replay_size = 15
     my_starting_stack = 10000
@@ -28,19 +28,33 @@ class Group18Player(BasePokerPlayer):
             input_actions = Input(shape=(2,6,4), name="actions_input")
             input_position = Input(shape=(1,),name="position_input")
 
-            x1 = Conv2D(32,(2,2),activation='relu')(input_cards)
+            x1 = Conv2D(16,(2,2),strides=1,activation='relu')(input_cards)
+            #x1 = Conv2D(12,(3,3),strides=1,activation='relu')(x1)
+            #x11 = MaxPooling2D(pool_size=(2,2))(x1)
+            #x11 = Conv2D(32,(1,1),activation='relu')(x11)
+            #x12 = Conv2D(16,(1,1),activation='relu')(x1)
+            #x12 = Conv2D(32,(2,2),activation='relu')(x12)
+            #d1 = Concatenate([x11, x12])
+
+
             x2 = Conv2D(32,(1,1),activation='relu')(input_actions)
-            x2 = Conv2D(32,(2,2),activation='relu')(x2)
-            x3 = Dense(1,activation='relu')(input_position)
+            #x2 = Conv2D(24,(1,1),activation='relu')(x2)
+            #x21 = Conv2D(6,(1,1),activation='relu')(x2)
+            #x221 = MaxPooling2D(pool_size=(1,1))(x2)
+            #x222 = Conv2D(6,(1,1),activation='relu')(x221)
+            #d2 = Concatenate(axis=1)([x21, x222])
+            
+            x3 = Dense(1, activation='relu')(input_position)
 
             d1 = Dense(128,activation='relu')(x1)
             d1 = Flatten()(d1)
-            d2 = Dense(128,activation='relu')(x2)
+
+            d2 = Dense(512,activation='relu')(x2)
             d2 = Flatten()(d2)
+
             x = concatenate([d1,d2,x3])
-            x = Dense(128)(x)
-            x = Dense(128)(x)
-            x = Dense(128)(x)
+            
+            x = Dense(256)(x)
             x = Dense(128)(x)
             x = Dense(32)(x)
             out = Dense(3)(x)
@@ -58,28 +72,41 @@ class Group18Player(BasePokerPlayer):
             input_actions = Input(shape=(2,6,4), name="actions_input")
             input_position = Input(shape=(1,),name="position_input")
 
-            x1 = Conv2D(32,(2,2),activation='relu', kernel_initializer="random_uniform")(input_cards)
-            x2 = Conv2D(32,(1,1),activation='relu', kernel_initializer="random_uniform")(input_actions)
-            x2 = Conv2D(32,(2,2),activation='relu', kernel_initializer="random_uniform")(x2)
-            x3 = Dense(1,activation='relu', kernel_initializer="random_uniform")(input_position)
+            x1 = Conv2D(16,(2,2),strides=1,activation='relu', kernel_initializer="random_uniform")(input_cards)
+            #x11 = Conv2D(32,(1,1),strides=2,padding='valid',activation='relu',kernel_initializer="random_uniform")(x1)
+            #x11 = MaxPooling2D(pool_size=(2,2), padding='valid')(x1)
+            #x11 = Conv2D(24,(1,1),activation='relu',kernel_initializer="random_uniform")(x11)
+            #x12 = Conv2D(12,(1,1),activation='relu',kernel_initializer="random_uniform")(x1)
+            #x12 = Conv2D(24,(2,2),activation='relu',padding='valid',kernel_initializer="random_uniform")(x12)
+            
+            #d1 = Concatenate(axis=2)([x11,x12])
 
+            x2 = Conv2D(32,(1,1),strides=1,activation='relu', kernel_initializer="random_uniform")(input_actions)
+            #x21 = Conv2D(32,(2,2),activation='relu', kernel_initializer="random_uniform")(x2)
+            #x22 = MaxPooling2D(pool_size=(2,2))(x2)
+            #x22 = Conv2D(32,(1,1),activation='relu', kernel_initializer="random_uniform")(x22)
+
+            #d2 = Concatenate(axis=2)([x21,x22])
+
+            x3 = Dense(1,activation='relu', kernel_initializer="random_uniform")(input_position)
+            
             d1 = Dense(128,activation='relu', kernel_initializer="random_uniform")(x1)
             d1 = Flatten()(d1)
-            d2 = Dense(128,activation='relu', kernel_initializer="random_uniform")(x2)
+            d2 = Dense(512,activation='relu', kernel_initializer="random_uniform")(x2)
             d2 = Flatten()(d2)
+
             x = concatenate([d1,d2,x3])
-            x = Dense(128, kernel_initializer="random_uniform")(x)
-            x = Dense(128, kernel_initializer="random_uniform")(x)
-            x = Dense(128, kernel_initializer="random_uniform")(x)
+
+            x = Dense(256, kernel_initializer="random_uniform")(x)
             x = Dense(128, kernel_initializer="random_uniform")(x)
             x = Dense(32, kernel_initializer="random_uniform")(x)
             out = Dense(3)(x)
 
             model = Model(inputs=[input_cards, input_actions,input_position], outputs=out)
             model.compile(optimizer='rmsprop', loss='mse')
-
+            
             return model
-
+        
         self.vvh = 0
         self.action_sb = 3
         # self.table = {}
@@ -98,8 +125,8 @@ class Group18Player(BasePokerPlayer):
             return Group18Player.suits[suit]
 
         def get_card_y(card):
-            rank = card[1]
-            return Group18Player.ranks[rank]
+            small_or_big_blind_turn = card[1]
+            return Group18Player.ranks[small_or_big_blind_turn]
 
         def get_street_grid(cards):
             grid = np.zeros((4,13))
@@ -146,8 +173,8 @@ class Group18Player(BasePokerPlayer):
 
         # Maybe don't modularise this, the program takes up more ram when this is modularised
         def pick_action():
-            if np.random.rand(1) < Group18Player.e:
-                self.action_sb = np.random.randint(0,4)
+            #if np.random.rand(1) < Group18Player.e:
+            #    self.action_sb = np.random.randint(0,4)
 
             if self.action_sb == 3 or len(valid_actions) == 2:
                 self.action_sb = 1
@@ -159,7 +186,7 @@ class Group18Player(BasePokerPlayer):
 
         def save_weights():
             # new_name = "setup/" + datetime.datetime.now().strftime("%d-%m_%H:%M:%S_") + str(self.vvh) + '.h5'
-            new_name = "setup/training_weights2" + '.h5'
+            new_name = "Group18.h5"
             self.model.save_weights(new_name)
 
         #####################################################################
@@ -263,7 +290,7 @@ class Group18Player(BasePokerPlayer):
                 self.target_Q[0, self.action_sb] = reward * Group18Player.y
             # Else we reward it slightly
             else:
-                self.target_Q[0, self.action_sb] = 0
+                self.target_Q[0, self.action_sb] = reward * 0.3
         else:
             self.target_Q[0, self.action_sb] = reward
 
@@ -276,7 +303,6 @@ class Group18Player(BasePokerPlayer):
 
         for ev in range(len(self.prev_round_features)):
             self.model.fit(self.prev_round_features[ev], self.prev_reward_state[ev], verbose=0)
-
 
 
 def setup_ai():
