@@ -23,5 +23,6 @@ install:
   - pip install tensorflow
   
 script:
-  - python example.py #Run the poker rounds
+  - python example.py  #Run the poker rounds
+
  
